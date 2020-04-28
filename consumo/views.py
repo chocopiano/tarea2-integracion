@@ -13,7 +13,9 @@ def guesaf(request):
         for i in snippets:
             lista1=[]
             for a in i.ingredients.all():
-                lista1.append('http://127.0.0.1:8000/ingrediente/'+str(a.idi))
+                dicc={}
+                dicc['path']='https://burgueseriawene.herokuapp.com/ingrediente/'+str(a.idi)
+                lista1.append(dicc)
             lista.append({'id':i.ide,'nombre':i.nombre,'precio':i.precio,'descripcion':i.descripcion,'imagen':i.imagen,'ingredientes':lista1})
 
         response=json.dumps(lista)
@@ -22,6 +24,8 @@ def guesaf(request):
     elif request.method == 'POST':
         data = json.loads(request.body.decode())
         try:
+            if data['nombre']=="" or data['precio']=="" or data['descripcion']=="" or data['imagen']=="":
+                return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
             h= Hamburguesa.objects.create(
                 nombre=data["nombre"],
                 precio=data["precio"],
@@ -45,7 +49,9 @@ def guesas(request,idef):
         else:
             lista1=[]
             for a in h[0].ingredients.all():
-                lista1.append('http://127.0.0.1:8000/ingrediente/'+str(a.idi))
+                dicc={}
+                dicc['path']='https://burgueseriawene.herokuapp.com/ingrediente/'+str(a.idi)
+                lista1.append(dicc)
             resultado={'id':h[0].ide,'nombre':h[0].nombre,'precio':h[0].precio,'descripcion':h[0].descripcion,'imagen':h[0].imagen,'ingredientes':lista1}
             return HttpResponse(json.dumps(resultado),status=status.HTTP_200_OK)
 
@@ -66,12 +72,20 @@ def guesas(request,idef):
                                     status=status.HTTP_404_NOT_FOUND)
             data = json.loads(request.body.decode())
             if "nombre" in data:
+                if data['nombre'] == "":
+                    return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
                 burger.update(nombre=data['nombre'])
             if "precio" in data:
+                if data['precio'] == "":
+                    return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
                 burger.update(precio=data['precio'])
             if "descripcion" in data:
+                if data['descripcion'] == "":
+                    return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
                 burger.update(descripcion=data['descripcion'])
             if "imagen" in data:
+                if data['imagen'] == "":
+                    return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
                 burger.update(imagen=data['imagen'])
             burger = Hamburguesa.objects.get(ide=idef)
             dicc = {}
@@ -82,7 +96,9 @@ def guesas(request,idef):
             dicc['imagen']=burger.imagen
             lista1=[]
             for a in burger.ingredients.all():
-                lista1.append('http://127.0.0.1:8000/ingrediente/'+str(a.idi))
+                dicc1={}
+                dicc1['path']='https://burgueseriawene.herokuapp.com/ingrediente/'+str(a.idi)
+                lista1.append(dicc1)
             dicc['ingredientes']=lista1
             hamburguesa = json.dumps(dicc)
             return HttpResponse(hamburguesa,status=status.HTTP_200_OK)
@@ -103,6 +119,8 @@ def content(request):
     elif request.method=='POST':
         data=json.loads(request.body.decode())
         try:
+            if data['nombre']=="" or data['descripcion']=="":
+                return HttpResponse(json.dumps({'message': 'input invalido'}), status=status.HTTP_400_BAD_REQUEST)
             ing=Ingredientes.objects.create(
                 nombre=data['nombre'],
                 descripcion=data['descripcion'])
@@ -122,7 +140,7 @@ def contenido(request,idif):
             ingre=Ingredientes.objects.get(idi=idif)
             for h in Hamburguesa.objects.all():
                 if ingre in h.ingredients.all():
-                    return HttpResponse(json.dumps({'resultado': 'Ingrediente no se puede borrar, esta presente en una hamburguesa'}), status=status.HTTP_200_OK)
+                    return HttpResponse(json.dumps({'resultado': 'Ingrediente no se puede borrar, esta presente en una hamburguesa'}), status=status.HTTP_409_CONFLICT)
 
             Ingredientes.objects.get(idi=idif).delete()
             return HttpResponse(json.dumps({'resultado':'Ingrediente eliminado'}), status=status.HTTP_200_OK)
@@ -146,12 +164,7 @@ def agregar_ingrediente(request,bur,ing):
         if len(hamburguesa)==0:
             return HttpResponse(json.dumps({'message': 'Id de hamburguesa invalido'}), status=status.HTTP_400_BAD_REQUEST)
         hamburguesa[0].ingredients.add(ingrediente[0])
-        lista1 = []
-        for a in hamburguesa[0].ingredients.all():
-            lista1.append('http://127.0.0.1:8000/ingrediente/' + str(a.idi))
-        resultado = {'id': hamburguesa[0].ide, 'nombre': hamburguesa[0].nombre, 'precio': hamburguesa[0].precio, 'descripcion': hamburguesa[0].descripcion,
-                     'imagen': hamburguesa[0].imagen, 'ingredientes': lista1}
-        return HttpResponse(json.dumps(resultado), status=status.HTTP_201_CREATED)
+        return HttpResponse(status=status.HTTP_201_CREATED)
 
     elif request.method=="DELETE":
         ingrediente=Ingredientes.objects.filter(idi=ing)
